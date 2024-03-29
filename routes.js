@@ -10,15 +10,19 @@ router.get("/", async (req, res) => {
 
 // receive mpesa result; 
 router.post("/mpesa/result", async (req, res) => {
-    let body = req.body.Body.stkCallback; 
-
-	// initiate mpesa 
-	let mpesa = new MPESA(); 
-	let result = mpesa.parseSTKResults(body); 
-
-	console.log(result)
-
-	res.status(200).json({status: "success"})
+    try {
+        let body = req.body.Body.stkCallback; 
+    
+        // initiate mpesa 
+        let mpesa = new MPESA(); 
+        let result = mpesa.parseSTKResults(body); 
+    
+        console.log(result)
+    
+        res.status(200).json({status: "success"})
+    } catch (err) {
+        res.status(400).json({status: "fail"})
+    }
 })
 
 module.exports = router; 
