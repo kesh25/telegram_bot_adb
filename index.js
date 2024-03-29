@@ -71,7 +71,7 @@ app.all("*", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
-const PORT = 4040;
+const PORT = 8000;
 
 /**
  * Create HTTP server.
