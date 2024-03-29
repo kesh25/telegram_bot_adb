@@ -231,4 +231,8 @@ setInterval(checkExpiredSubscriptions, 1 * 60 * 1000);
 setInterval(checkPendingSubscriptions, 1 * 60 * 1000);
 
 // Start bot
-bot.launch().then(() => console.log("Bot started"));
+try {
+	bot.launch().then(() => console.log("Bot started"));
+} catch (err) {
+
+}
