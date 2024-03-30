@@ -1,5 +1,6 @@
 const express = require("express"); 
 const MPESA = require("./lib/mpesa");
+const SMS = require("./lib/sms"); 
 
 const Subscription = require("./models/subscriptionModel");
 const User = require("./models/userModel"); 
@@ -46,15 +47,16 @@ router.post("/mpesa/result", async (req, res) => {
             oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
     
             // Convert dates to MongoDB ISODate format
-            var currentISODate = commence_at.toISOString();
             var sevenWeeksLaterISODate = sevenWeeksLater.toISOString();
             var oneMonthLaterISODate = oneMonthLater.toISOString();
             var oneYearLaterISODate = oneYearLater.toISOString();
     
             expires_at = type === "weekly" ? sevenWeeksLaterISODate: type === "monthly" ? oneMonthLaterISODate: oneYearLaterISODate; 
             
-            // send client a message 
-
+            // send owner a message of payment successful
+            let owner_phone = process.env.OWNER_PHONE; 
+            let sms = new SMS(owner_phone, `A new user has paid for the ${type} subscription.`);
+            await sms.send(); 
         }
         await Subscription.findByIdAndUpdate(subscription.id, {status, payment_details: {...subscription.payment_details, ...result}, expires_at, commence_at}); 
     
