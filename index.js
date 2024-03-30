@@ -84,19 +84,6 @@ var server = http.createServer(app);
 // connect db
 serverThroughDB(server, PORT);
 
-// app.get("/", (req, res) => {
-// 	res.send("Hello World!");
-// });
-
-// endpoint to receive mpesa payment
-// app.post("/mpesa/result", async (req, res) => {
-
-// })
-
-// app.listen(PORT, () => {
-// 	console.log(`Server running on port ${PORT}`);
-// });
-
 // BOT LOGIC STARTS HERE
 
 // Telegram Bot Token

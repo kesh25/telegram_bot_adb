@@ -51,22 +51,16 @@ router.post("/mpesa/result", async (req, res) => {
             var oneMonthLaterISODate = oneMonthLater.toISOString();
             var oneYearLaterISODate = oneYearLater.toISOString();
     
-            console.log("Current Date: " + currentISODate);
-            console.log("7 weeks later: " + sevenWeeksLaterISODate);
-            console.log("1 month later: " + oneMonthLaterISODate);
-            console.log("1 year later: " + oneYearLaterISODate);
-    
-    
             expires_at = type === "weekly" ? sevenWeeksLaterISODate: type === "monthly" ? oneMonthLaterISODate: oneYearLaterISODate; 
             
+            // send client a message 
 
         }
         await Subscription.findByIdAndUpdate(subscription.id, {status, payment_details: {...subscription.payment_details, ...result}, expires_at, commence_at}); 
-         
     
         // handle update message to telegram & add user to group/channel 
         let message = result.status === "success" ? "Payment was successful": `Payment was unsuccessful because ${result.ResultDesc.toLowerCase()}`; 
-
+        console.log(message);
         res.status(200).json({status: "success"})
     } catch (err) {
         res.status(400).json({status: "fail"})
