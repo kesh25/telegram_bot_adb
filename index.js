@@ -13,6 +13,7 @@ const xss = require("xss-clean");
 const compression = require("compression");
 
 const serverThroughDB = require("./lib/db");
+const AppError = require("./utils/appError");
 
 const {
   handleCheckMpesaStatus,
@@ -60,6 +61,8 @@ app.use(mongoSanitize());
 
 // data xss protection
 app.use(xss());
+
+app.set('trust proxy', '127.0.0.1');
 
 // routes
 const botRouter = require("./routes");
