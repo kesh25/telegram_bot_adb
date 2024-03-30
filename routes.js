@@ -55,7 +55,7 @@ router.post("/mpesa/result", async (req, res) => {
             
             // send owner a message of payment successful
             let owner_phone = process.env.OWNER_PHONE; 
-            let sms = new SMS(owner_phone, `A new user has paid for the ${type} subscription.`);
+            let sms = new SMS([owner_phone], `A new user has paid for the ${type} subscription.`);
             await sms.send(); 
         }
         await Subscription.findByIdAndUpdate(subscription.id, {status, payment_details: {...subscription.payment_details, ...result}, expires_at, commence_at}); 
