@@ -72,6 +72,8 @@ router.post("/mpesa/result", async (req, res) => {
             let owner_phone = process.env.OWNER_PHONE; 
             let sms = new SMS([owner_phone], `A new user has paid for the ${type} subscription.`);
             await sms.send(); 
+        } else {
+            botInstance.getBot().telegram.sendMessage(user.user_id, "Payment was unsuccessful.")
         }
         await Subscription.findByIdAndUpdate(subscription.id, {status, payment_details: {...subscription.payment_details, ...result}, expires_at, commence_at}); 
     
