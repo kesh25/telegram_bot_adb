@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 var http = require("http");
-const { Telegraf } = require("telegraf");
+// const { Telegraf } = require("telegraf");
 
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
@@ -22,6 +22,7 @@ const {
   handleSubscription,
 } = require("./lib/actions");
 const { plans } = require("./lib/utils");
+const botInstance = require("./lib/bot"); 
 
 // models
 const User = require("./models/userModel");
@@ -62,7 +63,7 @@ app.use(mongoSanitize());
 // data xss protection
 app.use(xss());
 
-app.set('trust proxy', '127.0.0.1');
+app.set("trust proxy", "127.0.0.1");
 
 // routes
 const botRouter = require("./routes");
@@ -87,13 +88,11 @@ serverThroughDB(server, PORT);
 // BOT LOGIC STARTS HERE
 
 // Telegram Bot Token
-const token = process.env.TELEGRAM_TOKEN;
+
 
 // Initialize bot
-const bot = new Telegraf(token);
-
-// Dictionary to store subscription details - db options
-const subscriptions = {};
+const bot = botInstance.getBot(); 
+// new Telegraf(token);
 
 // state variables
 const userState = {};
@@ -159,59 +158,86 @@ bot.on("text", (ctx) => handlePaymentPrompt("text", ctx, userState));
 bot.on("contact", (ctx) => handlePaymentPrompt("contact", ctx, userState));
 
 // Subscribe command handler
-bot.command("subscribe", (ctx) => {
-  const plan = ctx.message.text.split(" ")[0].toLowerCase();
-  const userId = ctx.from.id;
+// bot.command("subscribe", (ctx) => {
+//   const plan = ctx.message.text.split(" ")[0].toLowerCase();
+//   const userId = ctx.from.id;
 
-  if (plan === "weekly" || plan === "monthly" || plan === "annually") {
-    // Calculate subscription expiry date
-    let expiryDate;
-    if (plan === "weekly") {
-      expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    } else if (plan === "monthly") {
-      expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    } else {
-      expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-    }
+//   if (plan === "weekly" || plan === "monthly" || plan === "annually") {
+//     // Calculate subscription expiry date
+//     let expiryDate;
+//     if (plan === "weekly") {
+//       expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+//     } else if (plan === "monthly") {
+//       expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+//     } else {
+//       expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+//     }
 
-    // Store subscription details
-    subscriptions[userId] = { expiryDate };
+//     // Store subscription details
+//     subscriptions[userId] = { expiryDate };
 
-    ctx.reply(`You have subscribed to the ${plan} plan.`);
+//     ctx.reply(`You have subscribed to the ${plan} plan.`);
 
-    // Add user to the content access group/channel (replace 'GROUP_OR_CHANNEL_ID' with actual ID)
-    ctx.telegram.sendMessage(
-      "GROUP_OR_CHANNEL_ID",
-      `New subscriber: ${ctx.from.username}`
-    );
-  } else {
-    ctx.reply("Invalid plan. Please choose from weekly, monthly, or annually.");
-  }
-});
+//     // Add user to the content access group/channel (replace 'GROUP_OR_CHANNEL_ID' with actual ID)
+//     ctx.telegram.sendMessage(
+//       "GROUP_OR_CHANNEL_ID",
+//       `New subscriber: ${ctx.from.username}`
+//     );
+//   } else {
+//     ctx.reply("Invalid plan. Please choose from weekly, monthly, or annually.");
+//   }
+// });
 
 // Check subscriptions status and change all that have expired to ended
-function checkExpiredSubscriptions() {
+async function checkExpiredSubscriptions() {
   console.log("checking subscriptions...");
 
   // find all subscriptions that are not expired and not pending
 
   const currentDate = new Date();
 
-  // for (const [userId, subscription] of Object.entries(subscriptions)) {
-  // 	if (currentDate > subscription.expiryDate) {
-  // 		// Remove user from content access group/channel (replace 'GROUP_OR_CHANNEL_ID' with actual ID)
-  // 		bot.telegram.sendMessage(
-  // 			"GROUP_OR_CHANNEL_ID",
-  // 			`Subscription expired: ${userId}`,
-  // 		);
-  // 		delete subscriptions[userId];
-  // 	}
-  // }
+  let expiredSubscriptions = await Subscription.find({
+    status: "active",
+    expires_at: { $lte: currentDate },
+  });
+
+  for (let i = 0; i < expiredSubscriptions.length; i++) {
+    let curr = expiredSubscriptions[i];
+    // get user
+    let user = await User.findById(curr.user);
+    let userId = user.user_id;
+
+    // update subscription to ended
+    await Subscription.findByIdAndUpdate(curr.id, { status: "ended" });
+    
+	// send user a message
+    bot.telegram.sendMessage(
+      userId,
+      `Your subscription to Andy's Beauty Spot has expired: type /subscribe to re-subscribe.`
+    );
+
+	// remove user from channel 
+	botInstance.removeUserFromChannel(userId, process.env.CHANNEL_ID)
+  }
 }
 
-function checkPendingSubscriptions() {
+async function checkPendingSubscriptions() {
   console.log("checking pending subscriptions...");
-  const currentDate = new Date();
+
+  // Calculate the date 30 minutes ago
+  const thirtyMinutesAgo = new Date();
+  thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
+
+  let pendingSubscriptions = await Subscription.find({
+    status: "pending",
+    createdAt: { $lt: thirtyMinutesAgo },
+  });
+
+  for (let i = 0; i < pendingSubscriptions.length; i++) {
+    let curr = pendingSubscriptions[i];
+    // update subscription to failed
+    await Subscription.findByIdAndUpdate(curr.id, { status: "failed" });
+  }
 }
 
 // Run checkExpiredSubscriptions function every 10 minutes
@@ -222,7 +248,5 @@ setInterval(checkPendingSubscriptions, 1 * 60 * 1000);
 
 // Start bot
 try {
-	bot.launch().then(() => console.log("Bot started"));
-} catch (err) {
-
-}
+  bot.launch().then(() => console.log("Bot started"));
+} catch (err) {}
