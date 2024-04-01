@@ -76,12 +76,11 @@ router.post("/mpesa/result", async (req, res) => {
     
         // send member this message 
         let message = result.status === "success" ? `Payment was successful for the ${type} subscription ending on ${format(expires_at, "MMM dd, yyyy")}`: `Payment was unsuccessful because ${result.ResultDesc.toLowerCase()}`; 
-        console.log(message);
         await bot.telegram.sendMessage(user.user_id, message); 
         
         res.status(200).json({status: "success"})
     } catch (err) {
-        console.log(err)
+        console.log("ERROR", err)
         res.status(400).json({status: "fail"})
     }
 })

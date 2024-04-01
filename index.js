@@ -98,10 +98,8 @@ const userState = {};
 bot.start(async (ctx) => {
   let user_id = ctx.from.id;
 
-  // console.log(ctx.from);
   // fetch user from db
   let user = await User.findOne({ user_id });
-  console.log(user);
   // if not subscribed - show plans
 
   // if subscribed - proceed to authorization
@@ -156,9 +154,7 @@ bot.on("contact", (ctx) => handlePaymentPrompt("contact", ctx, userState));
 
 async function checkExpiredSubscriptions() {
   console.log("checking subscriptions...");
-
   // find all subscriptions that are not expired and not pending
-
   const currentDate = new Date();
 
   let expiredSubscriptions = await Subscription.find({
@@ -212,47 +208,6 @@ setInterval(checkExpiredSubscriptions, 30 * 60 * 1000);
 
 // run checkPendingSubscriptions function every 30 minutes
 setInterval(checkPendingSubscriptions, 30 * 60 * 1000);
-
-// test 
-// async function checkUsers() {
-//   try {
-//     console.log("checking users"); 
-//     const chatId = process.env.CHANNEL_ID; // Get the channel ID
-//     const membersCount = await bot.telegram.getChatMembersCount(chatId);
-//     let userId = "5797142664"; 
-//     // await bot.telegram.approveChatJoinRequest(chatId, "5797142664"); 
-//     await bot.telegram.kickChatMember(chatId, userId);
-//     await bot.telegram.unbanChatMember(chatId, userId)
-//     // const info = await bot.telegram.getChat(chatId); 
-//     // const administrators = await bot.telegram.getChatAdministrators(chatId);
-//     // const members = await bot.telegram.getChatMembers(chatId)
-//     // await bot.telegram.inviteToChannel(chatId, "6977087644")
-//     // console.log(membersCount, info, administrators); 
-
-//     "5797142664"
-//     return 
-//     // Filter out bots and get user IDs
-//     const userIds = administrators
-//         .filter(admin => !admin.user.is_bot)
-//         .map(admin => admin.user.id);
-
-//     // Perform action to kick out unsubscribed members
-//     const allUserIds = await ctx.telegram.getChatMembers(chatId);
-//     const unsubscribedUsers = allUserIds
-//         .filter(user => !userIds.includes(user.user.id));
-
-//     for (const user of unsubscribedUsers) {
-//         await ctx.telegram.kickChatMember(chatId, user.user.id);
-//         console.log(`Kicked out user ${user.user.id}`);
-//     }
-
-//     ctx.reply(`Kicked out ${unsubscribedUsers.length} unsubscribed members.`);
-// } catch (error) {
-//     console.error('Error kicking out unsubscribed members:', error);
-//     // ctx.reply('An error occurred while kicking out unsubscribed members.');
-// }
-// }
-// setInterval(checkUsers, 1 * 50 * 1000); 
 
 // Start bot
 try {
