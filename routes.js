@@ -81,6 +81,7 @@ router.post("/mpesa/result", async (req, res) => {
         
         res.status(200).json({status: "success"})
     } catch (err) {
+        console.log(err)
         res.status(400).json({status: "fail"})
     }
 })
