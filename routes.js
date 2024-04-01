@@ -62,13 +62,10 @@ router.post("/mpesa/result", async (req, res) => {
             var oneYearLaterISODate = oneYearLater.toISOString();
     
             expires_at = type === "weekly" ? sevenWeeksLaterISODate: type === "monthly" ? oneMonthLaterISODate: oneYearLaterISODate; 
-            
-
+        
             // add user to group
             await botInstance.addUserToChannel(user.user_id, process.env.CHANNEL_ID)
             
-           
-
             let owner_phone = process.env.OWNER_PHONE; 
             let sms = new SMS([owner_phone], `A new user has paid for the ${type} subscription.`);
             await sms.send(); 

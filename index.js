@@ -22,7 +22,7 @@ const {
   handleSubscription,
 } = require("./lib/actions");
 const { plans } = require("./lib/utils");
-const botInstance = require("./lib/bot"); 
+const botInstance = require("./lib/bot");
 
 // models
 const User = require("./models/userModel");
@@ -87,11 +87,8 @@ serverThroughDB(server, PORT);
 
 // BOT LOGIC STARTS HERE
 
-// Telegram Bot Token
-
-
 // Initialize bot
-const bot = botInstance.getBot(); 
+const bot = botInstance.getBot();
 // new Telegraf(token);
 
 // state variables
@@ -157,38 +154,6 @@ bot.action("payment_status", (ctx) => handleCheckMpesaStatus(ctx, userState));
 bot.on("text", (ctx) => handlePaymentPrompt("text", ctx, userState));
 bot.on("contact", (ctx) => handlePaymentPrompt("contact", ctx, userState));
 
-// Subscribe command handler
-// bot.command("subscribe", (ctx) => {
-//   const plan = ctx.message.text.split(" ")[0].toLowerCase();
-//   const userId = ctx.from.id;
-
-//   if (plan === "weekly" || plan === "monthly" || plan === "annually") {
-//     // Calculate subscription expiry date
-//     let expiryDate;
-//     if (plan === "weekly") {
-//       expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-//     } else if (plan === "monthly") {
-//       expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-//     } else {
-//       expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-//     }
-
-//     // Store subscription details
-//     subscriptions[userId] = { expiryDate };
-
-//     ctx.reply(`You have subscribed to the ${plan} plan.`);
-
-//     // Add user to the content access group/channel (replace 'GROUP_OR_CHANNEL_ID' with actual ID)
-//     ctx.telegram.sendMessage(
-//       "GROUP_OR_CHANNEL_ID",
-//       `New subscriber: ${ctx.from.username}`
-//     );
-//   } else {
-//     ctx.reply("Invalid plan. Please choose from weekly, monthly, or annually.");
-//   }
-// });
-
-// Check subscriptions status and change all that have expired to ended
 async function checkExpiredSubscriptions() {
   console.log("checking subscriptions...");
 
@@ -209,15 +174,15 @@ async function checkExpiredSubscriptions() {
 
     // update subscription to ended
     await Subscription.findByIdAndUpdate(curr.id, { status: "ended" });
-    
-	// send user a message
+
+    // send user a message
     bot.telegram.sendMessage(
       userId,
       `Your subscription to Andy's Beauty Spot has expired: type /subscribe to re-subscribe.`
     );
 
-	// remove user from channel 
-	botInstance.removeUserFromChannel(userId, process.env.CHANNEL_ID)
+    // remove user from channel
+    botInstance.removeUserFromChannel(userId, process.env.CHANNEL_ID);
   }
 }
 
@@ -238,13 +203,56 @@ async function checkPendingSubscriptions() {
     // update subscription to failed
     await Subscription.findByIdAndUpdate(curr.id, { status: "failed" });
   }
-}
+};
+
+
 
 // Run checkExpiredSubscriptions function every 10 minutes
-setInterval(checkExpiredSubscriptions, 1 * 60 * 1000);
+setInterval(checkExpiredSubscriptions, 30 * 60 * 1000);
 
 // run checkPendingSubscriptions function every 30 minutes
-setInterval(checkPendingSubscriptions, 1 * 60 * 1000);
+setInterval(checkPendingSubscriptions, 30 * 60 * 1000);
+
+// test 
+// async function checkUsers() {
+//   try {
+//     console.log("checking users"); 
+//     const chatId = process.env.CHANNEL_ID; // Get the channel ID
+//     const membersCount = await bot.telegram.getChatMembersCount(chatId);
+//     let userId = "5797142664"; 
+//     // await bot.telegram.approveChatJoinRequest(chatId, "5797142664"); 
+//     await bot.telegram.kickChatMember(chatId, userId);
+//     await bot.telegram.unbanChatMember(chatId, userId)
+//     // const info = await bot.telegram.getChat(chatId); 
+//     // const administrators = await bot.telegram.getChatAdministrators(chatId);
+//     // const members = await bot.telegram.getChatMembers(chatId)
+//     // await bot.telegram.inviteToChannel(chatId, "6977087644")
+//     // console.log(membersCount, info, administrators); 
+
+//     "5797142664"
+//     return 
+//     // Filter out bots and get user IDs
+//     const userIds = administrators
+//         .filter(admin => !admin.user.is_bot)
+//         .map(admin => admin.user.id);
+
+//     // Perform action to kick out unsubscribed members
+//     const allUserIds = await ctx.telegram.getChatMembers(chatId);
+//     const unsubscribedUsers = allUserIds
+//         .filter(user => !userIds.includes(user.user.id));
+
+//     for (const user of unsubscribedUsers) {
+//         await ctx.telegram.kickChatMember(chatId, user.user.id);
+//         console.log(`Kicked out user ${user.user.id}`);
+//     }
+
+//     ctx.reply(`Kicked out ${unsubscribedUsers.length} unsubscribed members.`);
+// } catch (error) {
+//     console.error('Error kicking out unsubscribed members:', error);
+//     // ctx.reply('An error occurred while kicking out unsubscribed members.');
+// }
+// }
+// setInterval(checkUsers, 1 * 50 * 1000); 
 
 // Start bot
 try {
