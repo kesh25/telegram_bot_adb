@@ -1,6 +1,5 @@
 const express = require("express");
 const MPESA = require("./lib/mpesa");
-// const SMS = require("./lib/sms");
 
 const Subscription = require("./models/subscriptionModel");
 const User = require("./models/userModel");
