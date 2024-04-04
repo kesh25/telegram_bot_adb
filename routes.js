@@ -191,7 +191,7 @@ router.post("/kopokopo/result", async (req, res) => {
         [owner_phone],
         `A new user has paid for the ${type} subscription.`
       );
-      await sms.send();
+      if (process.env.NODE_ENV !== "development") await sms.send();
     } else {
       // handle fail
       botInstance
