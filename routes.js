@@ -1,6 +1,6 @@
 const express = require("express");
 const MPESA = require("./lib/mpesa");
-const SMS = require("./lib/sms");
+// const SMS = require("./lib/sms");
 
 const Subscription = require("./models/subscriptionModel");
 const User = require("./models/userModel");
@@ -95,12 +95,13 @@ router.post("/kopokopo/result", async (req, res) => {
       // add user to group
       await botInstance.addUserToChannel(user.user_id, process.env.CHANNEL_ID);
 
-      let owner_phone = process.env.OWNER_PHONE;
-      let sms = new SMS(
-        [owner_phone],
-        `A new user has paid for the ${type} subscription.`
-      );
-      if (process.env.NODE_ENV !== "development") await sms.send();
+      // not necessary - user will receive an mpesa message 
+      // let owner_phone = process.env.OWNER_PHONE;
+      // let sms = new SMS(
+      //   [owner_phone],
+      //   `A new user has paid for the ${type} subscription.`
+      // );
+      // if (process.env.NODE_ENV !== "development") await sms.send();
     } else {
       // handle fail
       botInstance
