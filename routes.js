@@ -17,6 +17,7 @@ router.get("/", async (req, res) => {
 // receive mpesa result;
 // DEPRECATED
 router.post("/mpesa/result", async (req, res) => {
+    return res.status(400).json({ status: "fail" });
   try {
     let body = req.body.Body.stkCallback;
 
