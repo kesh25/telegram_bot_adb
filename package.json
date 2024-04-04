@@ -24,6 +24,7 @@
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.2.0",
     "helmet": "^7.1.0",
+    "k2-connect-node": "^1.2.1",
     "mongoose": "^8.2.4",
     "morgan": "^1.10.0",
     "node-datetime": "^2.1.2",

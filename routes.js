@@ -1,88 +1,226 @@
-const express = require("express"); 
+const express = require("express");
 const MPESA = require("./lib/mpesa");
-const SMS = require("./lib/sms"); 
+const SMS = require("./lib/sms");
 
 const Subscription = require("./models/subscriptionModel");
-const User = require("./models/userModel"); 
+const User = require("./models/userModel");
 
-const botInstance = require("./lib/bot"); 
+const botInstance = require("./lib/bot");
 
-const router = express.Router(); 
+const router = express.Router();
 
-// test 
+// test
 router.get("/", async (req, res) => {
-    res.send("Hello World!");
-}); 
+  res.send("Hello World!");
+});
 
-// receive mpesa result; 
+// receive mpesa result;
+// DEPRECATED
 router.post("/mpesa/result", async (req, res) => {
-    try {
-        let body = req.body.Body.stkCallback; 
-    
-        // initiate mpesa 
-        let mpesa = new MPESA(); 
-        let result = mpesa.parseSTKResults(body); 
+  try {
+    let body = req.body.Body.stkCallback;
 
-        // fetch subscription based on paymentRef
-        let status = result.status === "success" ? "active": "failed"; 
+    // initiate mpesa
+    let mpesa = new MPESA();
+    let result = mpesa.parseSTKResults(body);
 
-        let subscription = await Subscription.findOne({paymentRef: result.CheckoutRequestID, status: "pending"}); 
+    // fetch subscription based on paymentRef
+    let status = result.status === "success" ? "active" : "failed";
 
-        if (!subscription) return res.status(400).json({status: "fail"}); 
-        // get user 
-        let user = await User.findById(subscription.user); 
-        if (!user) return res.status(400).json({status: "fail"});
+    let subscription = await Subscription.findOne({
+      paymentRef: result.CheckoutRequestID,
+      status: "pending",
+    });
 
-        let type = subscription.subscription; 
-        let commence_at;
-        let expires_at;
+    if (!subscription) return res.status(400).json({ status: "fail" });
+    // get user
+    let user = await User.findById(subscription.user);
+    if (!user) return res.status(400).json({ status: "fail" });
 
+    let type = subscription.subscription;
+    let commence_at;
+    let expires_at;
 
-        // bot instance
-        let bot = botInstance.getBot(); 
+    // bot instance
+    let bot = botInstance.getBot();
 
-        if (status === "active") {
-            // Get the current date
-            commence_at = new Date();
-    
-            // Add 7 weeks to the current date
-            var sevenWeeksLater = new Date(commence_at.getTime() + (7 * 7 * 24 * 60 * 60 * 1000));
-    
-            // Add a month to the current date
-            var oneMonthLater = new Date(commence_at);
-            oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
-    
-            // Add an year to the current date
-            var oneYearLater = new Date(commence_at);
-            oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-    
-            // Convert dates to MongoDB ISODate format
-            var sevenWeeksLaterISODate = sevenWeeksLater.toISOString();
-            var oneMonthLaterISODate = oneMonthLater.toISOString();
-            var oneYearLaterISODate = oneYearLater.toISOString();
-    
-            expires_at = type === "weekly" ? sevenWeeksLaterISODate: type === "monthly" ? oneMonthLaterISODate: oneYearLaterISODate; 
-        
-            // add user to group
-            await botInstance.addUserToChannel(user.user_id, process.env.CHANNEL_ID)
-            
-            let owner_phone = process.env.OWNER_PHONE; 
-            let sms = new SMS([owner_phone], `A new user has paid for the ${type} subscription.`);
-            await sms.send(); 
-        } else {
-            botInstance.getBot().telegram.sendMessage(user.user_id, "Payment was unsuccessful.")
-        }
-        await Subscription.findByIdAndUpdate(subscription.id, {status, payment_details: {...subscription.payment_details, ...result}, expires_at, commence_at}); 
-    
-        // send member this message 
-        let message = result.status === "success" ? `Payment was successful for the ${type} subscription ending on ${format(expires_at, "MMM dd, yyyy")}`: `Payment was unsuccessful because ${result.ResultDesc.toLowerCase()}`; 
-        await bot.telegram.sendMessage(user.user_id, message); 
-        
-        res.status(200).json({status: "success"})
-    } catch (err) {
-        console.log("ERROR", err)
-        res.status(400).json({status: "fail"})
+    if (status === "active") {
+      // Get the current date
+      commence_at = new Date();
+
+      // Add 7 weeks to the current date
+      var sevenWeeksLater = new Date(
+        commence_at.getTime() + 7 * 7 * 24 * 60 * 60 * 1000
+      );
+
+      // Add a month to the current date
+      var oneMonthLater = new Date(commence_at);
+      oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+
+      // Add an year to the current date
+      var oneYearLater = new Date(commence_at);
+      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+
+      // Convert dates to MongoDB ISODate format
+      var sevenWeeksLaterISODate = sevenWeeksLater.toISOString();
+      var oneMonthLaterISODate = oneMonthLater.toISOString();
+      var oneYearLaterISODate = oneYearLater.toISOString();
+
+      expires_at =
+        type === "weekly"
+          ? sevenWeeksLaterISODate
+          : type === "monthly"
+          ? oneMonthLaterISODate
+          : oneYearLaterISODate;
+
+      // add user to group
+      await botInstance.addUserToChannel(user.user_id, process.env.CHANNEL_ID);
+
+      let owner_phone = process.env.OWNER_PHONE;
+      let sms = new SMS(
+        [owner_phone],
+        `A new user has paid for the ${type} subscription.`
+      );
+      await sms.send();
+    } else {
+      botInstance
+        .getBot()
+        .telegram.sendMessage(user.user_id, "Payment was unsuccessful.");
     }
-})
+    await Subscription.findByIdAndUpdate(subscription.id, {
+      status,
+      payment_details: { ...subscription.payment_details, ...result },
+      expires_at,
+      commence_at,
+    });
 
-module.exports = router; 
+    // send member this message
+    let message =
+      result.status === "success"
+        ? `Payment was successful for the ${type} subscription ending on ${format(
+            expires_at,
+            "MMM dd, yyyy"
+          )}`
+        : `Payment was unsuccessful because ${result.ResultDesc.toLowerCase()}`;
+    await bot.telegram.sendMessage(user.user_id, message);
+
+    res.status(200).json({ status: "success" });
+  } catch (err) {
+    console.log("ERROR", err);
+    res.status(400).json({ status: "fail" });
+  }
+});
+
+router.post("/kopokopo/result", async (req, res) => {
+  try {
+
+    
+
+    // get data from the req.body;
+    let data = req.body.data;
+
+    let attributes = data.attributes;
+    let paymentId = data.id;
+
+    let { status, initiation_time, event } = attributes;
+
+    // payment_details 
+    let payment_details = {
+        paymentId, status, initiation_time
+    };
+    let message; 
+
+    if (event.resource) payment_details = {...payment_details, ...event.resource}; 
+    else {
+        message = event.errors;
+        payment_details.error = message; 
+    }; 
+
+    // fetch subscription by links.self
+    // it is unique and generated by kopokopo with the id at the end
+    let subscription = await Subscription.findOne({
+      paymentRef: data._links.self,
+      status: "pending",
+    });
+    if (!subscription) return res.status(400).json({ status: "fail" });
+    // get user
+    let user = await User.findById(subscription.user);
+    if (!user) return res.status(400).json({ status: "fail" });
+
+    // subscription type, commence_at, expires_at
+    let type = subscription.subscription;
+    let commence_at;
+    let expires_at;
+
+    if (status === "Success") {
+      // handle success query here
+
+      // Get the current date
+      commence_at = new Date();
+
+      // Add 7 weeks to the current date
+      var sevenWeeksLater = new Date(
+        commence_at.getTime() + 7 * 7 * 24 * 60 * 60 * 1000
+      );
+
+      // Add a month to the current date
+      var oneMonthLater = new Date(commence_at);
+      oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+
+      // Add an year to the current date
+      var oneYearLater = new Date(commence_at);
+      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+
+      // Convert dates to MongoDB ISODate format
+      var sevenWeeksLaterISODate = sevenWeeksLater.toISOString();
+      var oneMonthLaterISODate = oneMonthLater.toISOString();
+      var oneYearLaterISODate = oneYearLater.toISOString();
+
+      expires_at =
+        type === "weekly"
+          ? sevenWeeksLaterISODate
+          : type === "monthly"
+          ? oneMonthLaterISODate
+          : oneYearLaterISODate;
+
+      // add user to group
+      await botInstance.addUserToChannel(user.user_id, process.env.CHANNEL_ID);
+
+      let owner_phone = process.env.OWNER_PHONE;
+      let sms = new SMS(
+        [owner_phone],
+        `A new user has paid for the ${type} subscription.`
+      );
+      await sms.send();
+    } else {
+      // handle fail
+      botInstance
+        .getBot()
+        .telegram.sendMessage(user.user_id, "Payment was unsuccessful.");
+    }; 
+
+    await Subscription.findByIdAndUpdate(subscription.id, {
+        status: status === "Success" ? "active": "failed",
+        payment_details: { ...subscription.payment_details, ...payment_details },
+        expires_at,
+        commence_at,
+      });
+  
+      // send member this message
+      message =
+        status === "Success"
+          ? `Payment was successful for the ${type} subscription ending on ${format(
+              expires_at,
+              "MMM dd, yyyy"
+            )}`
+          : message;
+      await bot.telegram.sendMessage(user.user_id, message);
+  
+      res.status(200).json({ status: "success" });
+  } catch (err) {
+    console.log("ERROR", err);
+    res.status(400).json({ status: "fail" });
+  }
+});
+
+module.exports = router;

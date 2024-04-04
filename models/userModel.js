@@ -5,7 +5,7 @@ const schemaOptions = {
 	toJSON: { virtuals: true },
 	toObject: { virtuals: true },
 };
-// subscription schema
+ 
 const UserSchema = new mongoose.Schema(
 	{
 		user_id: {
