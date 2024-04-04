@@ -114,9 +114,6 @@ router.post("/mpesa/result", async (req, res) => {
 
 router.post("/kopokopo/result", async (req, res) => {
   try {
-
-    
-
     // get data from the req.body;
     let data = req.body.data;
 
@@ -124,6 +121,8 @@ router.post("/kopokopo/result", async (req, res) => {
     let paymentId = data.id;
 
     let { status, initiation_time, event } = attributes;
+
+    console.log({ status, initiation_time, event })
 
     // payment_details 
     let payment_details = {
