@@ -5,7 +5,7 @@ const SMS = require("./lib/sms");
 const Subscription = require("./models/subscriptionModel");
 const User = require("./models/userModel");
 
-const format = require("date-fns");
+const {format} = require("date-fns");
 
 const botInstance = require("./lib/bot");
 
