@@ -120,7 +120,7 @@ bot.start(async (ctx) => {
 
     // if user has no active subscriptions
     if (subscriptions.length === 0) return plans(ctx, userState);
-    else ctx.reply("Welcome back! You subscription is still.");
+    else ctx.reply("Welcome back! You subscription is still active.");
 
     // get the user details
     userState.userId = ctx.from.id;
