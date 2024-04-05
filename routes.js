@@ -27,7 +27,7 @@ router.post("/kopokopo/result", async (req, res) => {
 
     let { status, initiation_time, event } = attributes;
 
-    console.log({ paymentId, status, initiation_time, event })
+    // console.log({ paymentId, status, initiation_time, event })
 
     // payment_details 
     let payment_details = {
