@@ -68,7 +68,7 @@ router.post("/kopokopo/result", async (req, res) => {
 
       // Add 7 weeks to the current date
       var sevenWeeksLater = new Date(
-        commence_at.getTime() + 7 * 7 * 24 * 60 * 60 * 1000
+        commence_at.getTime() + (7 * 24 * 60 * 60 * 1000)
       );
 
       // Add a month to the current date
