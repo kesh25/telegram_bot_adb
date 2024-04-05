@@ -21,12 +21,15 @@ const {
   handleRetryMpesa,
   handleSubscription,
 } = require("./lib/actions");
-const { plans } = require("./lib/utils");
+const { plans, setupUser, updateUsersCache } = require("./lib/utils");
 const botInstance = require("./lib/bot");
 
 // models
 const User = require("./models/userModel");
 const Subscription = require("./models/subscriptionModel");
+
+// cache
+const cache = require("./utils/cache"); 
 
 // slight hack to keep bot alive - make it a http server
 // to also handle the payment webhooks
@@ -92,11 +95,14 @@ const bot = botInstance.getBot();
 // new Telegraf(token);
 
 // state variables
-const userState = {};
+// const userState = cache.getItem("user_state"); 
+
+// {};
 
 // Start command handler
 bot.start(async (ctx) => {
-  let user_id = ctx.from.id;
+  let userState = setupUser(ctx)
+  let user_id = userState.userId;
 
   // fetch user from db
   let user = await User.findOne({ user_id });
@@ -106,12 +112,13 @@ bot.start(async (ctx) => {
   // Check if the user is starting the bot for the first time
   if (!user) {
     // "The bot collects subscription payments for Andy'S Beauty Spot Tutorials";
-    plans(ctx, userState);
+    plans(ctx);
     // Update the user's subscription status to indicate they have seen the preview message
     // subscriptions[ctx.from.id] = { previewSeen: true };
   } else {
-    userState.registered = true; // handles if user is registered
-    userState.id = user.id;
+    
+    updateUsersCache(ctx.from.id, user.id)
+
     // check whether user has a subscription or not
     let subscriptions = await Subscription.find({
       user,
@@ -119,38 +126,34 @@ bot.start(async (ctx) => {
     });
 
     // if user has no active subscriptions
-    if (subscriptions.length === 0) return plans(ctx, userState);
+    if (subscriptions.length === 0) return plans(ctx);
     else ctx.reply("Welcome back! You subscription is still active.");
-
-    // get the user details
-    userState.userId = ctx.from.id;
-    userState.first_name = ctx.from.first_name || ctx.from.username;
   }
 });
 
 // // Subscribe option handlers
 bot.action("subscribe_weekly", (ctx) =>
-  handleSubscription(ctx, "weekly", 70, userState)
+  handleSubscription(ctx, "weekly", 70)
 );
 bot.action("subscribe_monthly", (ctx) =>
-  handleSubscription(ctx, "monthly", 200, userState)
+  handleSubscription(ctx, "monthly", 200)
 );
 bot.action("subscribe_annually", (ctx) =>
-  handleSubscription(ctx, "annual", 1200, userState)
+  handleSubscription(ctx, "annual", 1200)
 );
 
 // subscribe option handler
-bot.hears("Change plan", (ctx) => plans(ctx, userState));
+bot.hears("Change plan", (ctx) => plans(ctx));
 
 // retry mpesa
-bot.action("retry_mpesa", (ctx) => handleRetryMpesa(ctx, userState));
+bot.action("retry_mpesa", (ctx) => handleRetryMpesa(ctx));
 
 // check payment status
-bot.action("payment_status", (ctx) => handleCheckMpesaStatus(ctx, userState));
+bot.action("payment_status", (ctx) => handleCheckMpesaStatus(ctx));
 
 // Handle phone number input
-bot.on("text", (ctx) => handlePaymentPrompt("text", ctx, userState));
-bot.on("contact", (ctx) => handlePaymentPrompt("contact", ctx, userState));
+bot.on("text", (ctx) => handlePaymentPrompt("text", ctx));
+bot.on("contact", (ctx) => handlePaymentPrompt("contact", ctx));
 
 async function checkExpiredSubscriptions() {
   console.log("checking subscriptions...");
@@ -211,5 +214,6 @@ setInterval(checkPendingSubscriptions, 30 * 60 * 1000);
 
 // Start bot
 try {
+
   bot.launch().then(() => console.log("Bot started"));
 } catch (err) {}
