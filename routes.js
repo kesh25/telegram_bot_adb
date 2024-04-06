@@ -7,6 +7,7 @@ const User = require("./models/userModel");
 const {format} = require("date-fns");
 
 const botInstance = require("./lib/bot");
+const { Markup } = require("telegraf");
 
 const router = express.Router();
 
@@ -88,17 +89,7 @@ router.post("/kopokopo/result", async (req, res) => {
           : type === "monthly"
           ? oneMonthLaterISODate
           : oneYearLaterISODate;
-
-      // add user to group
-      await botInstance.addUserToChannel(user.user_id, process.env.CHANNEL_ID);
-
-      // not necessary - user will receive an mpesa message 
-      // let owner_phone = process.env.OWNER_PHONE;
-      // let sms = new SMS(
-      //   [owner_phone],
-      //   `A new user has paid for the ${type} subscription.`
-      // );
-      // if (process.env.NODE_ENV !== "development") await sms.send();
+      
     } else {
       // handle fail
       botInstance
@@ -119,10 +110,16 @@ router.post("/kopokopo/result", async (req, res) => {
           ? `Payment was successful for the ${type} subscription ending on ${format(
               expires_at,
               "MMM dd, yyyy"
-            )}`
+            )}. Use this link - ${process.env.INVITE_LINK} to finalize and click verify below.`
           : message;
-      await bot.telegram.sendMessage(user.user_id, message);
-  
+      
+        let verify_markup = Markup.inlineKeyboard([
+          Markup.button.callback("Verify membership", "verify_join")
+        ]); 
+
+        if (status === "Success") await bot.telegram.sendMessage(user.user_id, message, verify_markup);
+        else await bot.telegram.sendMessage(user.user_id, `${message} - Use /subscribe to select a plan.`); 
+
       res.status(200).json({ status: "success" });
   } catch (err) {
     console.log("ERROR", err);

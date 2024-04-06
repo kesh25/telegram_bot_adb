@@ -20,6 +20,8 @@ const {
   handlePaymentPrompt,
   handleRetryMpesa,
   handleSubscription,
+  handleVerifyJoin,
+  handleConfirm
 } = require("./lib/actions");
 const { plans, setupUser, updateUsersCache } = require("./lib/utils");
 const botInstance = require("./lib/bot");
@@ -28,8 +30,6 @@ const botInstance = require("./lib/bot");
 const User = require("./models/userModel");
 const Subscription = require("./models/subscriptionModel");
 
-// cache
-const cache = require("./utils/cache"); 
 
 // slight hack to keep bot alive - make it a http server
 // to also handle the payment webhooks
@@ -142,8 +142,33 @@ bot.action("subscribe_annually", (ctx) =>
   handleSubscription(ctx, "annual", 1200)
 );
 
+bot.action("verify_join", async ctx => handleVerifyJoin(ctx))
+
 // subscribe option handler
 bot.hears("Change plan", (ctx) => plans(ctx));
+bot.hears("/subscribe", ctx => plans(ctx));
+bot.hears("/confirm", ctx => handleConfirm(ctx))
+
+
+// test purposes only
+bot.hears("/test-remove", async (ctx) => {
+  let userId = ctx.from.id; 
+  console.log(userId, ctx.from); 
+
+  await botInstance.removeUserFromChannel(userId);
+
+  let user = await User.findOne({user_id: userId}); 
+
+  if (user) {
+    let subscription = await Subscription.findOne({user: user.id, status: "active"}); 
+
+    if (subscription) {
+      await  Subscription.findByIdAndUpdate(subscription.id, {status: "ended"}); 
+
+    }
+  }
+ 
+})
 
 // retry mpesa
 bot.action("retry_mpesa", (ctx) => handleRetryMpesa(ctx));
@@ -181,7 +206,7 @@ async function checkExpiredSubscriptions() {
     );
 
     // remove user from channel
-    botInstance.removeUserFromChannel(userId, process.env.CHANNEL_ID);
+    botInstance.removeUserFromChannel(userId);
   }
 }
 
