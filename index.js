@@ -148,14 +148,8 @@ bot.action("verify_join", async ctx => handleVerifyJoin(ctx))
 bot.hears("Change plan", (ctx) => plans(ctx));
 bot.hears("/subscribe", ctx => plans(ctx));
 bot.hears("/confirm", ctx => handleConfirm(ctx))
-
-
-// test purposes only
-bot.hears("/test-remove", async (ctx) => {
+bot.hears("/exit", async (ctx) => {
   let userId = ctx.from.id; 
-  console.log(userId, ctx.from); 
-
-  await botInstance.removeUserFromChannel(userId);
 
   let user = await User.findOne({user_id: userId}); 
 
@@ -165,8 +159,9 @@ bot.hears("/test-remove", async (ctx) => {
     if (subscription) {
       await  Subscription.findByIdAndUpdate(subscription.id, {status: "ended"}); 
 
-    }
-  }
+    } else return; 
+  } else return;
+  await botInstance.removeUserFromChannel(userId);
  
 })
 
