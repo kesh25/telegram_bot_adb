@@ -201,7 +201,7 @@ async function checkExpiredSubscriptions() {
     );
 
     // remove user from channel
-    botInstance.removeUserFromChannel(userId);
+    await botInstance.removeUserFromChannel(userId);
   }
 }
 
