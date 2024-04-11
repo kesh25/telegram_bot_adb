@@ -239,8 +239,6 @@ setInterval(checkPendingSubscriptions, 30 * 60 * 1000);
 
 // Start bot
 try {
-  botInstance.cleanupUnsentMessages().then(() => {
+   
     bot.launch().then(() => console.log("Bot started"));
-
-  })
 } catch (err) {}
