@@ -19,6 +19,7 @@ router.get("/", async (req, res) => {
 
 
 router.post("/kopokopo/result", async (req, res) => {
+  console.log("PAYMENT RESULT ENDPOINT HIT...")
   try {
     // get data from the req.body;
     let data = req.body.data;
