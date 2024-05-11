@@ -181,51 +181,62 @@ bot.on("text", (ctx) => handlePaymentPrompt("text", ctx));
 bot.on("contact", (ctx) => handlePaymentPrompt("contact", ctx));
 
 async function checkExpiredSubscriptions() {
-  console.log("checking subscriptions...");
-  // find all subscriptions that are not expired and not pending
-  const currentDate = new Date();
-
-  let expiredSubscriptions = await Subscription.find({
-    status: "active",
-    expires_at: { $lte: currentDate },
-  });
-
-  for (let i = 0; i < expiredSubscriptions.length; i++) {
-    let curr = expiredSubscriptions[i];
-    // get user
-    let user = await User.findById(curr.user);
-    let userId = user.user_id;
-
-    // update subscription to ended
-    await Subscription.findByIdAndUpdate(curr.id, { status: "ended" });
-
-    // send user a message
-    bot.telegram.sendMessage(
-      userId,
-      `Your subscription to Andy's Beauty Spot has expired: type /subscribe to re-subscribe.`
-    );
-
-    // remove user from channel
-    await botInstance.removeUserFromChannel(userId);
+  try {
+    console.log("checking subscriptions...");
+    // find all subscriptions that are not expired and not pending
+    const currentDate = new Date();
+  
+    let expiredSubscriptions = await Subscription.find({
+      status: "active",
+      expires_at: { $lte: currentDate },
+    });
+  
+    for (let i = 0; i < expiredSubscriptions.length; i++) {
+      let curr = expiredSubscriptions[i];
+      // get user
+      let user = await User.findById(curr.user);
+      let userId = user.user_id;
+  
+      // update subscription to ended
+      await Subscription.findByIdAndUpdate(curr.id, { status: "ended" });
+  
+      // send user a message
+      bot.telegram.sendMessage(
+        userId,
+        `Your subscription to Andy's Beauty Spot has expired: type /subscribe to re-subscribe.`
+      );
+  
+      // remove user from channel
+      await botInstance.removeUserFromChannel(userId);
+    }
+    console.log("Done")
+  } catch (err) {
+    console.log(err)
   }
 }
 
 async function checkPendingSubscriptions() {
-  console.log("checking pending subscriptions...");
+  try {
+    console.log("checking pending subscriptions...");
+  
+    // Calculate the date 30 minutes ago
+    const thirtyMinutesAgo = new Date();
+    thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
+  
+    let pendingSubscriptions = await Subscription.find({
+      status: "pending",
+      createdAt: { $lt: thirtyMinutesAgo },
+    });
+  
+    for (let i = 0; i < pendingSubscriptions.length; i++) {
+      let curr = pendingSubscriptions[i];
+      // update subscription to failed
+      await Subscription.findByIdAndUpdate(curr.id, { status: "failed" });
+    }
 
-  // Calculate the date 30 minutes ago
-  const thirtyMinutesAgo = new Date();
-  thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
-
-  let pendingSubscriptions = await Subscription.find({
-    status: "pending",
-    createdAt: { $lt: thirtyMinutesAgo },
-  });
-
-  for (let i = 0; i < pendingSubscriptions.length; i++) {
-    let curr = pendingSubscriptions[i];
-    // update subscription to failed
-    await Subscription.findByIdAndUpdate(curr.id, { status: "failed" });
+    console.log("Done...")
+  } catch (err) {
+    console.log(err)
   }
 };
 
