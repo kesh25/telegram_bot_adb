@@ -33,7 +33,7 @@ router.post("/kopokopo/result", async (req, res) => {
 
     // payment_details 
     let payment_details = {
-        paymentId, status, initiation_time
+        paymentId, status: status, initiation_time
     };
     let message; 
 
@@ -89,7 +89,7 @@ router.post("/kopokopo/result", async (req, res) => {
       expires_at =
         type === "weekly"
           ? sevenWeeksLaterISODate
-          : type === "monthly"
+          : (type === "monthly" || type === "premium") 
           ? oneMonthLaterISODate
           : oneYearLaterISODate;
       
@@ -108,12 +108,15 @@ router.post("/kopokopo/result", async (req, res) => {
       });
   
       // send member this message
+      let channel = subscription.subscription === "premium" ? process.env.PREMIUM_CHANNEL_INVITE_LINK: process.env.INVITE_LINK;
+
+      
       message =
         status === "Success"
           ? `Payment was successful for the ${type} subscription ending on ${format(
               expires_at,
               "MMM dd, yyyy"
-            )}. Use this link - ${process.env.INVITE_LINK} to finalize and click verify below.`
+            )}. Use this link - ${channel} to finalize and click verify below.`
           : message;
       
         let verify_markup = Markup.inlineKeyboard([

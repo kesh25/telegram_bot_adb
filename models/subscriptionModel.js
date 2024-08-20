@@ -16,9 +16,13 @@ const SubscriptionSchema = new mongoose.Schema(
 		subscription: {
 			type: String,
 			enum: {
-				values: ["weekly", "monthly", "annual"],
+				values: ["weekly", "monthly", "annual", "premium"],
 				message: "Subscription is not allowed.",
 			},
+		},
+		premium: {
+			type: Boolean, 
+			default: false, 
 		},
 		status: {
 			type: String,

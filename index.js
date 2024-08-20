@@ -23,7 +23,7 @@ const {
   handleVerifyJoin,
   handleConfirm
 } = require("./lib/actions");
-const { plans, setupUser, updateUsersCache } = require("./lib/utils");
+const { basicPlans, plans, setupUser, updateUsersCache } = require("./lib/utils");
 const botInstance = require("./lib/bot");
 
 // models
@@ -86,7 +86,13 @@ const PORT = 8000;
 var server = http.createServer(app);
 
 // connect db
-serverThroughDB(server, PORT);
+try {
+
+  serverThroughDB(server, PORT);
+
+} catch (err) {
+
+}
 
 // BOT LOGIC STARTS HERE
 
@@ -132,10 +138,14 @@ bot.start(async (ctx) => {
     }
 
   } catch (err) {
-    console.log(err)
+    console.log(err, "here")
   }
 });
 
+
+// plan selection 
+bot.action("premium", ctx => handleSubscription(ctx, "premium", 1500)); 
+bot.action("basic", ctx => basicPlans(ctx))
 // // Subscribe option handlers
 bot.action("subscribe_weekly", (ctx) =>
   handleSubscription(ctx, "weekly", 70)
@@ -207,7 +217,7 @@ async function checkExpiredSubscriptions() {
       );
   
       // remove user from channel
-      await botInstance.removeUserFromChannel(userId);
+      await botInstance.removeUserFromChannel(userId, curr.premium);
     }
     console.log("Done")
   } catch (err) {
@@ -251,5 +261,5 @@ setInterval(checkPendingSubscriptions, 30 * 60 * 1000);
 // Start bot
 try {
    
-    bot.launch().then(() => console.log("Bot started"));
+    bot.launch().then(() => console.log("Bot started")).catch(err => {console.log(err)});
 } catch (err) {}
