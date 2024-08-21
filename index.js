@@ -106,41 +106,46 @@ const bot = botInstance.getBot();
 // {};
 
 // Start command handler
-bot.start(async (ctx) => {
-  try {
-    let userState = setupUser(ctx)
-    let user_id = userState.userId;
+try {
+  bot.start(async (ctx) => {
+    try {
+      let userState = setupUser(ctx)
+      let user_id = userState.userId;
+    
+      // fetch user from db
+      let user = await User.findOne({ user_id });
+      // if not subscribed - show plans
+    
+      // if subscribed - proceed to authorization
+      // Check if the user is starting the bot for the first time
+      if (!user) {
+        // "The bot collects subscription payments for Andy'S Beauty Spot Tutorials";
+        plans(ctx);
+        // Update the user's subscription status to indicate they have seen the preview message
+        // subscriptions[ctx.from.id] = { previewSeen: true };
+      } else {
+        
+        updateUsersCache(ctx.from.id, user.id)
+    
+        // check whether user has a subscription or not
+        let subscriptions = await Subscription.find({
+          user,
+          status: "active",
+        });
+    
+        // if user has no active subscriptions
+        if (subscriptions.length === 0) return plans(ctx);
+        else ctx.reply("Welcome back! You subscription is still active.");
+      }
   
-    // fetch user from db
-    let user = await User.findOne({ user_id });
-    // if not subscribed - show plans
-  
-    // if subscribed - proceed to authorization
-    // Check if the user is starting the bot for the first time
-    if (!user) {
-      // "The bot collects subscription payments for Andy'S Beauty Spot Tutorials";
-      plans(ctx);
-      // Update the user's subscription status to indicate they have seen the preview message
-      // subscriptions[ctx.from.id] = { previewSeen: true };
-    } else {
-      
-      updateUsersCache(ctx.from.id, user.id)
-  
-      // check whether user has a subscription or not
-      let subscriptions = await Subscription.find({
-        user,
-        status: "active",
-      });
-  
-      // if user has no active subscriptions
-      if (subscriptions.length === 0) return plans(ctx);
-      else ctx.reply("Welcome back! You subscription is still active.");
+    } catch (err) {
+      console.log(err, "here")
     }
+  });
 
-  } catch (err) {
-    console.log(err, "here")
-  }
-});
+} catch (err) {
+  console.log(err)
+}
 
 
 // plan selection 
