@@ -155,11 +155,19 @@ bot.action("basic", ctx => basicPlans(ctx))
 bot.action("subscribe_weekly", (ctx) =>
   handleSubscription(ctx, "weekly", 70)
 );
+// bot.action("subscribe_monthly", (ctx) =>
+//   handleSubscription(ctx, "monthly", 200)
+// );
+// bot.action("subscribe_annually", (ctx) =>
+//   handleSubscription(ctx, "annual", 1200)
+// );
+
+// 2025 update 
 bot.action("subscribe_monthly", (ctx) =>
-  handleSubscription(ctx, "monthly", 200)
+  handleSubscription(ctx, "monthly", 1500)
 );
 bot.action("subscribe_annually", (ctx) =>
-  handleSubscription(ctx, "annual", 1200)
+  handleSubscription(ctx, "annual", 15000)
 );
 
 bot.action("verify_join", async ctx => handleVerifyJoin(ctx))
